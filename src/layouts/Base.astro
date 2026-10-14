@@ -1,0 +1,93 @@
+---
+import { SITE } from '../site';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description = SITE.tagline } = Astro.props;
+const pageTitle = title ? `${title} · ${SITE.name}` : SITE.name;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+  </head>
+  <body>
+    <header class="wrap nav">
+      <a href="/" class="brand">{SITE.name}</a>
+      <nav>
+        <a href="/#projects">Projects</a>
+        <a href="/#about">About</a>
+        <a href={SITE.github}>GitHub</a>
+      </nav>
+    </header>
+    <main class="wrap">
+      <slot />
+    </main>
+    <footer class="wrap">
+      <p>© {new Date().getFullYear()} {SITE.name}</p>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --text: #1c1917;
+    --muted: #57534e;
+    --border: #e7e5e4;
+    --accent: #2563eb;
+    --tag: #f5f5f4;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0a09;
+      --surface: #1c1917;
+      --text: #f5f5f4;
+      --muted: #a8a29e;
+      --border: #292524;
+      --accent: #60a5fa;
+      --tag: #292524;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.6 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; display: block; }
+  h1, h2, h3 { line-height: 1.2; letter-spacing: -0.02em; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px; }
+  .nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 24px; padding-bottom: 24px; gap: 16px; flex-wrap: wrap;
+  }
+  .nav .brand { color: var(--text); font-weight: 700; }
+  .nav nav { display: flex; gap: 20px; }
+  .nav nav a { color: var(--muted); }
+  .nav nav a:hover { color: var(--text); text-decoration: none; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 0; list-style: none; }
+  .tags li {
+    background: var(--tag); color: var(--muted);
+    font-size: 13px; padding: 2px 10px; border-radius: 999px;
+  }
+  footer { color: var(--muted); font-size: 14px; padding-top: 48px; padding-bottom: 48px; }
+</style>
