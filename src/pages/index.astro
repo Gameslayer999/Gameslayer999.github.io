@@ -4,75 +4,301 @@ import Base from '../layouts/Base.astro';
 import { SITE } from '../site';
 
 const projects = (await getCollection('projects')).sort((a, b) => a.data.order - b.data.order);
+const [featured, ...rest] = projects;
+const stack = [...new Set(projects.flatMap((p) => p.data.tech))];
 
 const links = [
-  { label: 'GitHub', href: SITE.github },
   { label: 'LinkedIn', href: SITE.linkedin },
   { label: 'Résumé', href: SITE.resume },
   { label: 'Email', href: SITE.email && `mailto:${SITE.email}` },
 ].filter((l) => l.href);
+
+const firstName = SITE.name.split(' ')[0];
 ---
 
 <Base>
+  <div class="backdrop" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+    <div class="dots"></div>
+  </div>
+
   <section class="hero">
-    <h1>Hi, I'm {SITE.name.split(' ')[0]}.</h1>
-    <p class="tagline">{SITE.tagline}</p>
-    <p class="links">
-      {links.map((l) => <a href={l.href}>{l.label} →</a>)}
+    <p class="pill reveal">
+      <span class="lights"><i class="g"></i><i class="o"></i><i class="w"></i></span>
+      Currently building tools for AI agents
     </p>
+    <h1 class="reveal">Hi, I'm <span class="grad">{firstName}</span>.</h1>
+    <p class="tagline reveal">{SITE.tagline}</p>
+    <div class="cta reveal">
+      <a class="btn primary" href="#projects">See my work</a>
+      <a class="btn ghost" href={SITE.github}>GitHub ↗</a>
+      {links.map((l) => <a class="btn ghost" href={l.href}>{l.label}</a>)}
+    </div>
   </section>
 
+  <div class="marquee reveal" aria-label="Technologies I've used">
+    <div class="track">
+      {[0, 1].map((n) => (
+        <ul aria-hidden={n === 1 ? 'true' : undefined}>
+          {stack.map((t) => <li>{t}</li>)}
+        </ul>
+      ))}
+    </div>
+  </div>
+
   <section id="projects">
-    <h2>Projects</h2>
-    <div class="grid">
-      {projects.map((p) => (
-        <a class="card" href={`/projects/${p.id}/`}>
-          {p.data.image ? (
-            <div class="thumb"><img src={p.data.image} alt={p.data.imageAlt ?? ''} loading="lazy" /></div>
+    <header class="section-head reveal">
+      <span class="eyebrow">Selected work</span>
+      <h2>Projects</h2>
+    </header>
+
+    {featured && (
+      <a class="card spot featured reveal" href={`/projects/${featured.id}/`}>
+        <div class="thumb">
+          {featured.data.image ? (
+            <img src={featured.data.image} alt={featured.data.imageAlt ?? ''} />
           ) : (
-            <div class="thumb placeholder">{p.data.title}</div>
+            <span class="ph">{featured.data.title}</span>
           )}
+        </div>
+        <div class="body">
+          <span class="num">01 · Featured</span>
+          <h3>{featured.data.title}</h3>
+          <p>{featured.data.summary}</p>
+          <ul class="tags">{featured.data.tech.map((t) => <li>{t}</li>)}</ul>
+          <span class="more">Read more <span class="arrow">→</span></span>
+        </div>
+      </a>
+    )}
+
+    <div class="grid">
+      {rest.map((p, i) => (
+        <a class="card spot reveal" href={`/projects/${p.id}/`} style={`--delay:${i * 80}ms`}>
+          <div class="thumb">
+            {p.data.image ? (
+              <img src={p.data.image} alt={p.data.imageAlt ?? ''} loading="lazy" />
+            ) : (
+              <span class="ph">{p.data.title}</span>
+            )}
+          </div>
           <div class="body">
+            <span class="num">{String(i + 2).padStart(2, '0')}</span>
             <h3>{p.data.title}</h3>
             <p>{p.data.summary}</p>
             <ul class="tags">{p.data.tech.map((t) => <li>{t}</li>)}</ul>
+            <span class="more">Read more <span class="arrow">→</span></span>
           </div>
         </a>
       ))}
     </div>
   </section>
 
-  <section id="about">
-    <h2>About</h2>
-    <p>{SITE.bio}</p>
+  <section id="about" class="about reveal">
+    <header class="section-head">
+      <span class="eyebrow">About</span>
+      <h2>A bit about me</h2>
+    </header>
+    <div class="about-card spot">
+      <p>{SITE.bio}</p>
+      <a class="btn ghost" href={SITE.github}>More on GitHub ↗</a>
+    </div>
   </section>
 </Base>
 
-<style>
-  .hero { padding: 48px 0 56px; }
-  .hero h1 { font-size: clamp(2.2rem, 6vw, 3.2rem); margin: 0 0 12px; }
-  .tagline { font-size: 1.25rem; color: var(--muted); margin: 0 0 20px; max-width: 36ch; }
-  .links { display: flex; gap: 20px; flex-wrap: wrap; margin: 0; }
-  section { margin-bottom: 56px; }
-  h2 { font-size: 1.4rem; margin: 0 0 20px; }
-  .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
-  .card {
-    display: flex; flex-direction: column;
-    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-    overflow: hidden; color: var(--text);
-    transition: transform 0.15s ease, border-color 0.15s ease;
+<script>
+  // Fade sections in as they scroll into view.
+  const els = document.querySelectorAll('.reveal');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+    els.forEach((el) => el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      }),
+      { threshold: 0.12 },
+    );
+    els.forEach((el) => io.observe(el));
   }
-  .card:hover { transform: translateY(-3px); border-color: var(--accent); text-decoration: none; }
+
+  // Spotlight that follows the cursor across cards.
+  document.querySelectorAll<HTMLElement>('.spot').forEach((card) => {
+    card.addEventListener('pointermove', (e) => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      card.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
+  });
+</script>
+
+<style>
+  /* ---------- backdrop ---------- */
+  .backdrop {
+    position: absolute; inset: 0 0 auto 0; height: 900px;
+    overflow: hidden; pointer-events: none; z-index: -1;
+  }
+  .blob {
+    position: absolute; border-radius: 50%; filter: blur(80px);
+    animation: drift 18s ease-in-out infinite alternate;
+  }
+  .b1 { width: 520px; height: 520px; background: var(--glow-1); top: -140px; left: 8%; }
+  .b2 { width: 460px; height: 460px; background: var(--glow-2); top: 40px; right: 6%; animation-delay: -6s; }
+  .b3 { width: 380px; height: 380px; background: var(--glow-3); top: 320px; left: 38%; animation-delay: -12s; }
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to { transform: translate(60px, 40px) scale(1.12); }
+  }
+  .dots {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(var(--border) 1px, transparent 1px);
+    background-size: 22px 22px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+  }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 96px 0 56px; max-width: 760px; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    font: 500 13px/1 var(--mono); color: var(--muted);
+    padding: 8px 14px 8px 10px; margin: 0 0 28px;
+    border: 1px solid var(--border); border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+    backdrop-filter: blur(8px);
+  }
+  .lights { display: inline-flex; gap: 4px; }
+  .lights i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+  .lights .g { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+  .lights .o { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; animation: pulse 1.6s ease-in-out infinite; }
+  .lights .w { background: #e7e5e4; box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+
+  .hero h1 {
+    font-size: clamp(2.8rem, 8vw, 5rem); font-weight: 800;
+    letter-spacing: -0.045em; line-height: 1.02; margin: 0 0 20px;
+  }
+  .grad {
+    background: linear-gradient(100deg, var(--accent), var(--accent-2), #10b981, var(--accent));
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: shine 8s linear infinite;
+  }
+  @keyframes shine { to { background-position: 300% 0; } }
+  .tagline { font-size: clamp(1.15rem, 2.4vw, 1.4rem); color: var(--muted); margin: 0 0 36px; max-width: 34ch; }
+
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 11px 20px; border-radius: 10px; font-weight: 600; font-size: 15px;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  .btn:hover { text-decoration: none; transform: translateY(-1px); }
+  .btn.primary { background: var(--text); color: var(--bg); }
+  .btn.ghost {
+    color: var(--text); border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 60%, transparent);
+  }
+  .btn.ghost:hover { border-color: var(--muted); }
+
+  /* ---------- marquee ---------- */
+  .marquee {
+    overflow: hidden; margin: 0 0 88px; padding: 18px 0;
+    border-block: 1px solid var(--border);
+    mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  }
+  .track { display: flex; width: max-content; animation: scroll 30s linear infinite; }
+  .track ul { display: flex; gap: 40px; padding: 0 20px; margin: 0; list-style: none; }
+  .track li { font: 500 14px/1 var(--mono); color: var(--muted); white-space: nowrap; }
+  .track li::before { content: '◆'; margin-right: 40px; color: var(--border); }
+  @keyframes scroll { to { transform: translateX(-50%); } }
+
+  /* ---------- sections ---------- */
+  section { margin-bottom: 104px; }
+  .section-head { margin-bottom: 28px; }
+  .eyebrow { font: 500 13px/1 var(--mono); color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+  h2 { font-size: clamp(1.8rem, 4vw, 2.4rem); margin: 10px 0 0; letter-spacing: -0.03em; }
+
+  /* ---------- cards ---------- */
+  .card {
+    position: relative; display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    overflow: hidden; color: var(--text); isolation: isolate;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+  .spot::after {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), var(--glow-1), transparent 60%);
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .spot:hover::after { opacity: 1; }
+  .card:hover {
+    text-decoration: none; transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    box-shadow: 0 20px 50px -20px var(--glow-1);
+  }
   .thumb {
-    aspect-ratio: 16 / 9; display: grid; place-items: center;
-    background: var(--tag); position: relative;
+    position: relative; aspect-ratio: 16 / 9;
+    background:
+      radial-gradient(circle at 30% 20%, var(--glow-1), transparent 60%),
+      radial-gradient(circle at 80% 90%, var(--glow-2), transparent 55%),
+      var(--tag);
+    display: grid; place-items: center;
   }
   .thumb img {
-    position: absolute; inset: 16px;
-    width: calc(100% - 32px); height: calc(100% - 32px); object-fit: contain;
+    position: absolute; inset: 20px;
+    width: calc(100% - 40px); height: calc(100% - 40px); object-fit: contain;
+    transition: transform 0.4s ease;
   }
-  .thumb.placeholder { font-size: 1.6rem; font-weight: 700; color: var(--muted); }
-  .body { padding: 16px 18px 20px; }
-  .body h3 { margin: 0 0 6px; font-size: 1.1rem; }
-  .body p { margin: 0 0 14px; color: var(--muted); font-size: 15px; }
+  .card:hover .thumb img { transform: scale(1.04); }
+  .ph { font: 700 clamp(1.6rem, 3vw, 2.2rem)/1 var(--mono); letter-spacing: -0.03em; color: var(--text); opacity: 0.8; }
+  .body { padding: 22px 24px 24px; display: flex; flex-direction: column; flex: 1; }
+  .num { font: 500 12px/1 var(--mono); color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .body h3 { margin: 10px 0 8px; font-size: 1.35rem; letter-spacing: -0.02em; }
+  .body p { margin: 0 0 18px; color: var(--muted); font-size: 15.5px; }
+  .more { margin-top: auto; padding-top: 18px; font-weight: 600; font-size: 14px; color: var(--accent); }
+  .arrow { display: inline-block; transition: transform 0.2s ease; }
+  .card:hover .arrow { transform: translateX(4px); }
+
+  .featured { margin-bottom: 24px; }
+  @media (min-width: 760px) {
+    .featured { flex-direction: row; }
+    .featured .thumb { flex: 1.25; aspect-ratio: auto; min-height: 320px; }
+    .featured .body { flex: 1; padding: 36px; justify-content: center; }
+    .featured .body h3 { font-size: 2rem; }
+    .featured .more { margin-top: 8px; }
+  }
+  .grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+  /* ---------- about ---------- */
+  .about-card {
+    position: relative; isolation: isolate; overflow: hidden;
+    padding: 32px; border-radius: 18px;
+    background: var(--surface); border: 1px solid var(--border);
+  }
+  .about-card p { font-size: 1.15rem; margin: 0 0 24px; max-width: 60ch; }
+
+  /* ---------- reveal ---------- */
+  .reveal {
+    opacity: 0; transform: translateY(18px);
+    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+      border-color 0.25s ease, box-shadow 0.25s ease;
+    transition-delay: var(--delay, 0ms);
+  }
+  .reveal.in { opacity: 1; transform: none; }
+  .card.reveal.in:hover { transform: translateY(-4px); transition-delay: 0ms; }
+  .hero .reveal:nth-child(2) { --delay: 80ms; }
+  .hero .reveal:nth-child(3) { --delay: 160ms; }
+  .hero .reveal:nth-child(4) { --delay: 240ms; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blob, .grad, .track, .lights .o { animation: none; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+  @media (max-width: 600px) {
+    .hero { padding: 56px 0 48px; }
+    .marquee { margin-bottom: 64px; }
+    section { margin-bottom: 72px; }
+  }
 </style>
